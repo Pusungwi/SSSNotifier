@@ -1,8 +1,26 @@
+from lxml import etree
+from twitter import *
+
+import os
 import urllib.request
 import io
-from lxml import etree
 
 SEARCH_URL = 'http://store.steampowered.com'
+TWT_CONSUMER_APP_NAME = "SSSNotifier"
+TWT_CONSUMER_KEY = ':-P'
+TWT_CONSUMER_SECRET = ':-P'
+MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
+
+# twitter auth
+if not os.path.exists(MY_TWITTER_CREDS):
+    oauth_dance(TWT_CONSUMER_APP_NAME, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET,
+                MY_TWITTER_CREDS)
+
+oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
+# auth end
+
+twt = Twitter(auth=OAuth(
+    oauth_token, oauth_secret, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET))
 
 try:
 	requestFullUrl = SEARCH_URL
@@ -41,4 +59,5 @@ else:
 						#print("text : %s", tmpTopVotedItem.text.strip())
 						#print("-------------------------")
 
-	print("최다 득표 할인 게임 :", discountTitle, "할인률 :", discountPercent)
+	topVotedGameStr = "최다 득표 할인 게임 : " + discountTitle + " 할인률 : " + discountPercent + " #bot"
+	twt.statuses.update(status=topVotedGameStr)
