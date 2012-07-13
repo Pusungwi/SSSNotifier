@@ -6,6 +6,7 @@ import urllib.request
 import io
 
 SEARCH_URL = 'http://store.steampowered.com'
+TOP_VOTED_TXT_PATH = os.path.expanduser('~/.topvoted')
 TWT_CONSUMER_APP_NAME = "SSSNotifier"
 TWT_CONSUMER_KEY = ':-P'
 TWT_CONSUMER_SECRET = ':-P'
@@ -70,7 +71,22 @@ else:
 						#print("text : %s", tmpTopVotedItem.text.strip())
 						#print("-------------------------")
 
-	topVotedGameStr = "최다 득표 할인 게임 : " + discountTitle + " -" + discountPercent + " 이전 가격 : " + discountWasPrice + " 현재 가격 : " + discountNowPrice + " #bot"
-	#test print
+	topVotedGameStr = "[NEW] 최다 득표 할인 게임 : " + discountTitle + " -" + discountPercent + " 가격 : " + discountWasPrice + " -> " + discountNowPrice + " #bot"
 	print(topVotedGameStr)
-	twt.statuses.update(status=topVotedGameStr)
+	# twitter auth
+	if os.path.exists(TOP_VOTED_TXT_PATH):
+		#test print
+		wasTopVotedGameFile = open(TOP_VOTED_TXT_PATH, 'r+')
+		wasTopVotedGameStr = wasTopVotedGameFile.read()
+		if wasTopVotedGameStr != topVotedGameStr:
+			wasTopVotedGameFile.write(topVotedGameStr)
+			twt.statuses.update(status=topVotedGameStr)
+		else:
+			print("No Update")
+		wasTopVotedGameFile.close()
+	else:
+		wasTopVotedGameFile = open(TOP_VOTED_TXT_PATH, 'w')
+		wasTopVotedGameFile.write(topVotedGameStr)
+		twt.statuses.update(status=topVotedGameStr)
+		wasTopVotedGameFile.close()
+		
