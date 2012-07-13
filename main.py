@@ -1,3 +1,9 @@
+#######################################################
+#	Steam Summer Sale Notifier
+#	Ver 0.1
+#	Author : Yi Yeon Jae (pusungwi@gmail.com)
+#######################################################
+
 from lxml import etree
 from twitter import *
 
