@@ -30,6 +30,8 @@ except IOError:
 else:
 	discountTitle = ''
 	discountPercent = ''
+	discountWasPrice = ''
+	discountNowPrice = ''
 	parser = etree.HTMLParser()
 	recvRawHtml = recvSearchHtml.read()
 	recvRawDecodedHtml = recvRawHtml.decode('utf-8')
@@ -44,10 +46,19 @@ else:
 		#print("text : %s", htmlTree.text)
 		#print("-------------------------")
 		for htmlValue in htmlTree.values():
+			#topvoted item select if method
 			if htmlValue == 'ss_topvoted':
 				for tmpTopVotedItem in htmlTree.getchildren():
 						tvItemValues = tmpTopVotedItem.values()
+						#discount item select if method
 						if (tvItemValues[0] == 'discount'):
+							priceItems = tmpTopVotedItem.getchildren()[0]
+							for tmpPriceItem in priceItems.getchildren():
+								#was/now price select if method
+								if tmpPriceItem.values() == []:
+									discountNowPrice = tmpPriceItem.text.strip()
+								else:
+									discountWasPrice = tmpPriceItem.text.strip()
 							discountPercent = tmpTopVotedItem.text.strip()[1:]	
 						else:
 							tmp = tmpTopVotedItem.values()
@@ -59,5 +70,7 @@ else:
 						#print("text : %s", tmpTopVotedItem.text.strip())
 						#print("-------------------------")
 
-	topVotedGameStr = "최다 득표 할인 게임 : " + discountTitle + " 할인률 : " + discountPercent + " #bot"
+	topVotedGameStr = "최다 득표 할인 게임 : " + discountTitle + " -" + discountPercent + " 이전 가격 : " + discountWasPrice + " 현재 가격 : " + discountNowPrice + " #bot"
+	#test print
+	print(topVotedGameStr)
 	twt.statuses.update(status=topVotedGameStr)
