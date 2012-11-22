@@ -14,8 +14,8 @@ import io
 SEARCH_URL = 'http://store.steampowered.com'
 TOP_VOTED_TXT_PATH = os.path.expanduser('~/.topvoted')
 TWT_CONSUMER_APP_NAME = "SSSNotifier"
-TWT_CONSUMER_KEY = ':-P'
-TWT_CONSUMER_SECRET = ':-P'
+TWT_CONSUMER_KEY = 'BOERu3Iw4zZyvVieYJVWzg'
+TWT_CONSUMER_SECRET = '4t0L0MnEKfAWO9nV0YAhGBeuij5Vr3NX4WBx93pczc'
 MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
 
 # twitter auth
@@ -77,7 +77,7 @@ else:
 						#print("text : %s", tmpTopVotedItem.text.strip())
 						#print("-------------------------")
 
-	topVotedGameStr = "[NEW] 최다 득표 할인 게임 : " + discountTitle + " -" + discountPercent + " 가격 : " + discountWasPrice + " -> " + discountNowPrice + " #bot"
+	topVotedGameStr = "[NEW] 최다 득표 할인 게임 : " + discountTitle + " -" + discountPercent + " 가격 : " + discountWasPrice + " -> " + discountNowPrice + " #bot #Steam여름세일"
 	print(topVotedGameStr)
 	# twitter auth
 	if os.path.exists(TOP_VOTED_TXT_PATH):
