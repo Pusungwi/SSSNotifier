@@ -14,8 +14,8 @@ import io
 SEARCH_URL = 'http://store.steampowered.com'
 TOP_VOTED_TXT_PATH = os.path.expanduser('~/.topvoted')
 TWT_CONSUMER_APP_NAME = "SSSNotifier"
-TWT_CONSUMER_KEY = 'BOERu3Iw4zZyvVieYJVWzg'
-TWT_CONSUMER_SECRET = '4t0L0MnEKfAWO9nV0YAhGBeuij5Vr3NX4WBx93pczc'
+TWT_CONSUMER_KEY = ''
+TWT_CONSUMER_SECRET = ''
 MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
 
 # twitter auth
