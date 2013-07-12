@@ -20,14 +20,12 @@ MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
 
 # twitter auth
 if not os.path.exists(MY_TWITTER_CREDS):
-    oauth_dance(TWT_CONSUMER_APP_NAME, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET,
-                MY_TWITTER_CREDS)
+    oauth_dance(TWT_CONSUMER_APP_NAME, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET, MY_TWITTER_CREDS)
 
 oauth_token, oauth_secret = read_token_file(MY_TWITTER_CREDS)
 # auth end
 
-twt = Twitter(auth=OAuth(
-    oauth_token, oauth_secret, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET))
+twt = Twitter(auth=OAuth(oauth_token, oauth_secret, TWT_CONSUMER_KEY, TWT_CONSUMER_SECRET))
 
 try:
 	requestFullUrl = SEARCH_URL
@@ -52,13 +50,16 @@ else:
 		#print("head : %s", htmlTree.head)
 		#print("text : %s", htmlTree.text)
 		#print("-------------------------")
+		print(htmlTree.keys())
 		for htmlValue in htmlTree.values():
 			#topvoted item select if method
-			if htmlValue == 'ss_topvoted':
+			print(htmlValue)
+			if htmlValue == 'promo_item_list':
 				for tmpTopVotedItem in htmlTree.getchildren():
 						tvItemValues = tmpTopVotedItem.values()
+						print(tvItemValues)
 						#discount item select if method
-						if (tvItemValues[0] == 'discount'):
+						if (tvItemValues[0] == 'item'):
 							priceItems = tmpTopVotedItem.getchildren()[0]
 							for tmpPriceItem in priceItems.getchildren():
 								#was/now price select if method
@@ -86,13 +87,13 @@ else:
 		wasTopVotedGameStr = wasTopVotedGameFile.read()
 		if wasTopVotedGameStr != topVotedGameStr:
 			wasTopVotedGameFile.write(topVotedGameStr)
-			twt.statuses.update(status=topVotedGameStr)
+			#twt.statuses.update(status=topVotedGameStr)
 		else:
 			print("No Update")
 		wasTopVotedGameFile.close()
 	else:
 		wasTopVotedGameFile = open(TOP_VOTED_TXT_PATH, 'w')
 		wasTopVotedGameFile.write(topVotedGameStr)
-		twt.statuses.update(status=topVotedGameStr)
+		#twt.statuses.update(status=topVotedGameStr)
 		wasTopVotedGameFile.close()
 		
