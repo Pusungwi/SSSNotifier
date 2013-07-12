@@ -26,6 +26,52 @@ DAILY_SALE_TXT_PATH = os.path.expanduser('dSaleList')
 FLASH_SALE_TXT_PATH = os.path.expanduser('fSaleList')
 VOTE_SALE_TXT_PATH = os.path.expanduser('vSaleList')
 
+def realCheckAndPostSaleStatus(filePath, targetList, format):
+	isAlreadyPosted = False
+	if os.path.exists(filePath):
+		with open(filePath) as f:
+			resultDict = json.load(f)
+		
+		savedFSaleList = resultDict['data']
+		for savedFSaleItem in savedFSaleList:
+			if targetList[0]['id'] == savedFSaleItem['id']:
+				print('already posted.')
+				isAlreadyPosted = True
+
+	if isAlreadyPosted == False:
+		if os.path.exists(filePath):
+			os.remove(filePath)
+
+		flashSaleDict = {'data':targetList, 'version':0.1}
+		with open(filePath, 'w') as f:
+			json.dump(flashSaleDict, f)
+
+		for saleItem in targetList:
+			tmpStr = format % (saleItem['url'], saleItem['name'], saleItem['originalPrice'],
+			 saleItem['discountedPrice'], saleItem['salePercentage'])
+			print(tmpStr)
+			twt.statuses.update(status=tmpStr)
+
+def parsingSaleItemToDict(htmlTree):
+	tmpItemDict = {}
+	itemUrl = htmlTree.attrib['href'] # get sale target url
+	tmpItemDict['url'] = itemUrl
+
+	itemID = itemUrl.split('/')[4] #get sale item id and name
+	tmpItemDict['id'] = itemID
+	tmpItemDict['name'] = getSteamAppNameFromID(itemID)
+		
+	originalPrice = htmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
+	tmpItemDict['originalPrice'] = originalPrice
+
+	discountedPrice = htmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
+	tmpItemDict['discountedPrice'] = discountedPrice
+
+	salePercentage = htmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
+	tmpItemDict['salePercentage'] = salePercentage
+
+	return tmpItemDict
+
 def getSteamAppNameFromID(id):
 	resultDict = None
 	if not os.path.exists(STEAM_APP_LIST_PATH):
@@ -77,146 +123,30 @@ def checkAndPostSaleStatus():
 
 		voteSaleDict = {}
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.vote_previouswinner a'):
-			itemUrl = tmpHtmlTree.attrib['href'] # get sale target url
-			voteSaleDict['url'] = itemUrl
-
-			itemID = itemUrl.split('/')[4] #get sale item id and name
-			voteSaleDict['id'] = itemID
-			voteSaleDict['name'] = getSteamAppNameFromID(itemID)
-
-			originalPrice = tmpHtmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
-			voteSaleDict['originalPrice'] = originalPrice
-
-			discountedPrice = tmpHtmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
-			voteSaleDict['discountedPrice'] = discountedPrice
-
-			salePercentage = tmpHtmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
-			voteSaleDict['salePercentage'] = salePercentage
+			#print all html for debug
+			#print(lxml.html.tostring(tmpHtmlTree))
+			voteSaleDict = parsingSaleItemToDict(tmpHtmlTree)
 
 		dailySaleList = []
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.summersale_dailydeals a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
-
-			tmpItemDict = {}
-			itemUrl = tmpHtmlTree.attrib['href'] # get sale target url
-			tmpItemDict['url'] = itemUrl
-
-			itemID = itemUrl.split('/')[4] #get sale item id and name
-			tmpItemDict['id'] = itemID
-			tmpItemDict['name'] = getSteamAppNameFromID(itemID)
-		
-			originalPrice = tmpHtmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
-			tmpItemDict['originalPrice'] = originalPrice
-
-			discountedPrice = tmpHtmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
-			tmpItemDict['discountedPrice'] = discountedPrice
-
-			salePercentage = tmpHtmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
-			tmpItemDict['salePercentage'] = salePercentage
-
-			dailySaleList.append(tmpItemDict)
+			itemDict = parsingSaleItemToDict(tmpHtmlTree)
+			dailySaleList.append(itemDict)
 
 		flashSaleList = []
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.flashdeals_row a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
-			tmpItemDict = {}
-			itemUrl = tmpHtmlTree.attrib['href'] # get sale target url
-			tmpItemDict['url'] = itemUrl
+			itemDict = parsingSaleItemToDict(tmpHtmlTree)
+			flashSaleList.append(itemDict)
 
-			itemID = itemUrl.split('/')[4] #get sale item id and name
-			tmpItemDict['id'] = itemID
-			tmpItemDict['name'] = getSteamAppNameFromID(itemID)
-		
-			originalPrice = tmpHtmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
-			tmpItemDict['originalPrice'] = originalPrice
-
-			discountedPrice = tmpHtmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
-			tmpItemDict['discountedPrice'] = discountedPrice
-
-			salePercentage = tmpHtmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
-			tmpItemDict['salePercentage'] = salePercentage
-
-			flashSaleList.append(tmpItemDict)
-
-		#read and write community Sale
-		isVSAlreadyPosted = False 
-		if os.path.exists(VOTE_SALE_TXT_PATH):
-			with open(VOTE_SALE_TXT_PATH) as f:
-				resultDict = json.load(f)
-
-			if voteSaleDict['id'] == resultDict['id']:
-				print('already posted. (Vote Sale)')
-				isVSAlreadyPosted = True
-
-		if isVSAlreadyPosted == False:
-			print('post & saving... (Vote Sale)')
-			if os.path.exists(VOTE_SALE_TXT_PATH):
-				os.remove(VOTE_SALE_TXT_PATH)
-
-			with open(VOTE_SALE_TXT_PATH, 'w') as f:
-				json.dump(voteSaleDict, f)
-
-			tmpStr = '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s 할인)' % (voteSaleDict['url'], voteSaleDict['name'], voteSaleDict['originalPrice'],
-			 voteSaleDict['discountedPrice'], voteSaleDict['salePercentage'])
-			print(tmpStr)
-			twt.statuses.update(status=tmpStr)
-
-		#read and write daily sale
-		isDSAlreadyPosted = False
-		if os.path.exists(DAILY_SALE_TXT_PATH):
-			with open(DAILY_SALE_TXT_PATH) as f:
-				resultDict = json.load(f)
-		
-			savedDSaleList = resultDict['data']
-			for savedDSaleItem in savedDSaleList:
-				if dailySaleList[0]['id'] == savedDSaleItem['id']:
-					print('already posted. (Daily Sale)')
-					isDSAlreadyPosted = True
-
-		if isDSAlreadyPosted == False:
-			print('post & saving... (Daily Sale)')
-			if os.path.exists(DAILY_SALE_TXT_PATH):
-				os.remove(DAILY_SALE_TXT_PATH)
-
-			dailySaleDict = {'data':dailySaleList, 'version':0.1}
-			with open(DAILY_SALE_TXT_PATH, 'w') as f:
-				json.dump(dailySaleDict, f)
-
-			for dailySaleItem in dailySaleList:
-				tmpStr = '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s 할인)' % (dailySaleItem['url'], dailySaleItem['name'], dailySaleItem['originalPrice'],
-				 dailySaleItem['discountedPrice'], dailySaleItem['salePercentage'])
-				print(tmpStr)
-				twt.statuses.update(status=tmpStr)
-
-		#read and write flash sale
-		isFSAlreadyPosted = False
-		if os.path.exists(FLASH_SALE_TXT_PATH):
-			with open(FLASH_SALE_TXT_PATH) as f:
-				resultDict = json.load(f)
-		
-			savedFSaleList = resultDict['data']
-			for savedFSaleItem in savedFSaleList:
-				if flashSaleList[0]['id'] == savedFSaleItem['id']:
-					print('already posted. (Flash Sale)')
-					isFSAlreadyPosted = True
-
-		if isFSAlreadyPosted == False:
-			print('post & saving... (Flash Sale)')
-			if os.path.exists(FLASH_SALE_TXT_PATH):
-				os.remove(FLASH_SALE_TXT_PATH)
-
-			flashSaleDict = {'data':flashSaleList, 'version':0.1}
-			with open(FLASH_SALE_TXT_PATH, 'w') as f:
-				json.dump(flashSaleDict, f)
-
-			for flashSaleItem in flashSaleList:
-				tmpStr = '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s 할인)' % (flashSaleItem['url'], flashSaleItem['name'], flashSaleItem['originalPrice'],
-				 flashSaleItem['discountedPrice'], flashSaleItem['salePercentage'])
-				print(tmpStr)
-				twt.statuses.update(status=tmpStr)
-
+		print('check&posting vote sale...')
+		realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s 할인)')
+		print('check&posting daily sale...')
+		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s 할인)')
+		print('check&posting flash sale...')
+		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s 할인)')
 
 if __name__ == "__main__":
 	while True:
