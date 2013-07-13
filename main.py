@@ -1,6 +1,6 @@
 #######################################################
 #	Steam Summer Sale Notifier
-#	Ver 0.1
+#	Ver 0.2
 #	Author : Yi Yeon Jae (pusungwi@gmail.com)
 #######################################################
 
@@ -42,9 +42,9 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 		if os.path.exists(filePath):
 			os.remove(filePath)
 
-		flashSaleDict = {'data':targetList, 'version':0.1}
+		saleDict = {'data':targetList, 'version':0.2}
 		with open(filePath, 'w') as f:
-			json.dump(flashSaleDict, f)
+			json.dump(saleDict, f)
 
 		for saleItem in targetList:
 			tmpStr = format % (saleItem['url'], saleItem['name'], saleItem['originalPrice'],
@@ -60,15 +60,30 @@ def parsingSaleItemToDict(htmlTree):
 	itemID = itemUrl.split('/')[4] #get sale item id and name
 	tmpItemDict['id'] = itemID
 	tmpItemDict['name'] = getSteamAppNameFromID(itemID)
-		
-	originalPrice = htmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
-	tmpItemDict['originalPrice'] = originalPrice
 
-	discountedPrice = htmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
-	tmpItemDict['discountedPrice'] = discountedPrice
+	oPriceTree = htmlTree.cssselect('div.discount_original_price')
+	if oPriceTree[0] == []:
+		print('original price not found')
+		return None
+	else:
+		originalPrice = htmlTree.cssselect('div.discount_original_price')[0].text #get sale percentage
+		tmpItemDict['originalPrice'] = originalPrice
 
-	salePercentage = htmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
-	tmpItemDict['salePercentage'] = salePercentage
+	dPriceTree = htmlTree.cssselect('div.discount_final_price')
+	if dPriceTree[0] == []:
+		print('discount price not found')
+		return None
+	else:
+		discountedPrice = htmlTree.cssselect('div.discount_final_price')[0].text #get sale percentage
+		tmpItemDict['discountedPrice'] = discountedPrice
+
+	sPctTree = htmlTree.cssselect('div.discount_pct')
+	if sPctTree[0] == []:
+		print('sale percentage not found')
+		return None
+	else:
+		salePercentage = htmlTree.cssselect('div.discount_pct')[0].text #get sale percentage
+		tmpItemDict['salePercentage'] = salePercentage
 
 	return tmpItemDict
 
@@ -125,24 +140,31 @@ def checkAndPostSaleStatus():
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.vote_previouswinner a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
-			voteSaleDict = parsingSaleItemToDict(tmpHtmlTree)
+			itemDict = parsingSaleItemToDict(tmpHtmlTree)
+			if itemDict != None:
+				voteSaleDict = itemDict
 
 		dailySaleList = []
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.summersale_dailydeals a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
-			dailySaleList.append(itemDict)
+			if itemDict != None:
+				dailySaleList.append(itemDict)
 
 		flashSaleList = []
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.flashdeals_row a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
-			flashSaleList.append(itemDict)
+			if itemDict != None:
+				flashSaleList.append(itemDict)
 
 		print('check&posting vote sale...')
-		realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s 할인)')
+		if voteSaleDict == {}:
+			print('skipping... (maybe region lock)')
+		else:
+			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s 할인)')
 		print('check&posting daily sale...')
 		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s 할인)')
 		print('check&posting flash sale...')
@@ -151,4 +173,4 @@ def checkAndPostSaleStatus():
 if __name__ == "__main__":
 	while True:
 		checkAndPostSaleStatus()
-		time.sleep(60*10)
+		time.sleep(60*5)
