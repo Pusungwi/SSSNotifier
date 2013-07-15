@@ -25,6 +25,7 @@ STEAM_APP_LIST_PATH = os.path.expanduser('steamAppList')
 DAILY_SALE_TXT_PATH = os.path.expanduser('dSaleList')
 FLASH_SALE_TXT_PATH = os.path.expanduser('fSaleList')
 VOTE_SALE_TXT_PATH = os.path.expanduser('vSaleList')
+CARD_SALE_TXT_PATH = os.path.expanduser('cSaleList')
 
 def realCheckAndPostSaleStatus(filePath, targetList, format):
 	isAlreadyPosted = False
@@ -49,8 +50,22 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 		for saleItem in targetList:
 			tmpStr = format % (saleItem['url'], saleItem['name'], saleItem['originalPrice'],
 			 saleItem['discountedPrice'], saleItem['salePercentage'])
-			print(tmpStr)
-			twt.statuses.update(status=tmpStr)
+
+			try:
+				dSearchDict = twt.search.tweets(q=tmpStr)
+				if len(dSearchDict['statuses']) != 0:
+					for dTweet in dSearchDict['statuses']:
+						if dTweet['source'].count(TWT_CONSUMER_APP_NAME) == 1:
+							print('removing duplicate tweet...')
+							twt.statuses.destroy(id=dTweet['id'])
+							break
+
+				twt.statuses.update(status=tmpStr)
+			except api.TwitterHTTPError as err:
+				print('status error - {0}'.format(err))
+			else:
+				print(tmpStr)
+
 
 def parsingSaleItemToDict(htmlTree):
 	tmpItemDict = {}
@@ -62,7 +77,7 @@ def parsingSaleItemToDict(htmlTree):
 	tmpItemDict['name'] = getSteamAppNameFromID(itemID)
 
 	oPriceTree = htmlTree.cssselect('div.discount_original_price')
-	if oPriceTree[0] == []:
+	if len(oPriceTree) == 0:
 		print('original price not found')
 		return None
 	else:
@@ -70,7 +85,7 @@ def parsingSaleItemToDict(htmlTree):
 		tmpItemDict['originalPrice'] = originalPrice
 
 	dPriceTree = htmlTree.cssselect('div.discount_final_price')
-	if dPriceTree[0] == []:
+	if len(dPriceTree) == 0:
 		print('discount price not found')
 		return None
 	else:
@@ -78,7 +93,7 @@ def parsingSaleItemToDict(htmlTree):
 		tmpItemDict['discountedPrice'] = discountedPrice
 
 	sPctTree = htmlTree.cssselect('div.discount_pct')
-	if sPctTree[0] == []:
+	if len(sPctTree) == 0:
 		print('sale percentage not found')
 		return None
 	else:
@@ -136,6 +151,12 @@ def checkAndPostSaleStatus():
 		#result = etree.tostring(recvParsedHtml.getroot(), pretty_print=True, method="html")
 		#print(recvParsedHtml)
 
+		tCardSaleDict = {}
+		for tmpHtmlTree in recvParsedHtml.cssselect('div.tradingcard_spotlight a'):
+			itemDict = parsingSaleItemToDict(tmpHtmlTree)
+			if itemDict != None:
+				tCardSaleDict = itemDict
+
 		voteSaleDict = {}
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.vote_previouswinner a'):
 			#print all html for debug
@@ -160,17 +181,29 @@ def checkAndPostSaleStatus():
 			if itemDict != None:
 				flashSaleList.append(itemDict)
 
+		removePastTweets()
+
 		print('check&posting vote sale...')
 		if voteSaleDict == {}:
 			print('skipping... (maybe region lock)')
 		else:
-			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s 할인)')
+			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s)')
+
+		print('check&posting card spotlight sale...')
+		if tCardSaleDict == {}:
+			print('skipping... (trading card region lock)')
+		else:
+			realCheckAndPostSaleStatus(CARD_SALE_TXT_PATH, [tCardSaleDict], '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
+
 		print('check&posting daily sale...')
-		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s 할인)')
+		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
+		
 		print('check&posting flash sale...')
-		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s 할인)')
+		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s)')
 
 if __name__ == "__main__":
-	while True:
-		checkAndPostSaleStatus()
-		time.sleep(60*5)
+	result = twt.search.tweets(q="http://t.co/BwSchq0mYd [NEW] 스팀 반짝 세일 : TrackMania² Canyon ($19.99-&gt;$9.99 USD, -50%)")
+	print(result)
+	#while True:
+	#	checkAndPostSaleStatus()
+	#	time.sleep(60*5)
