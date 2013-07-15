@@ -202,8 +202,6 @@ def checkAndPostSaleStatus():
 		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s)')
 
 if __name__ == "__main__":
-	result = twt.search.tweets(q="http://t.co/BwSchq0mYd [NEW] 스팀 반짝 세일 : TrackMania² Canyon ($19.99-&gt;$9.99 USD, -50%)")
-	print(result)
-	#while True:
-	#	checkAndPostSaleStatus()
-	#	time.sleep(60*5)
+	while True:
+		checkAndPostSaleStatus()
+		time.sleep(60*5)
