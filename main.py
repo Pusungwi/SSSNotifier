@@ -181,8 +181,6 @@ def checkAndPostSaleStatus():
 			if itemDict != None:
 				flashSaleList.append(itemDict)
 
-		removePastTweets()
-
 		print('check&posting vote sale...')
 		if voteSaleDict == {}:
 			print('skipping... (maybe region lock)')
