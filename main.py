@@ -61,7 +61,7 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 							break
 
 				twt.statuses.update(status=tmpStr)
-			except api.TwitterHTTPError as err:
+			except TwitterHTTPError as err:
 				print('status error - {0}'.format(err))
 			else:
 				print(tmpStr)
