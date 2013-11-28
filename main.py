@@ -1,6 +1,6 @@
 #######################################################
 #	Steam Summer Sale Notifier
-#	Ver 0.2
+#	Ver 0.3
 #	Author : Yi Yeon Jae (pusungwi@gmail.com)
 #######################################################
 
@@ -24,8 +24,6 @@ MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
 STEAM_APP_LIST_PATH = os.path.expanduser('steamAppList')
 DAILY_SALE_TXT_PATH = os.path.expanduser('dSaleList')
 FLASH_SALE_TXT_PATH = os.path.expanduser('fSaleList')
-VOTE_SALE_TXT_PATH = os.path.expanduser('vSaleList')
-CARD_SALE_TXT_PATH = os.path.expanduser('cSaleList')
 
 def realCheckAndPostSaleStatus(filePath, targetList, format):
 	isAlreadyPosted = False
@@ -43,7 +41,7 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 		if os.path.exists(filePath):
 			os.remove(filePath)
 
-		saleDict = {'data':targetList, 'version':0.2}
+		saleDict = {'data':targetList, 'version':0.3}
 		with open(filePath, 'w') as f:
 			json.dump(saleDict, f)
 
@@ -151,22 +149,8 @@ def checkAndPostSaleStatus():
 		#result = etree.tostring(recvParsedHtml.getroot(), pretty_print=True, method="html")
 		#print(recvParsedHtml)
 
-		tCardSaleDict = {}
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.tradingcard_spotlight a'):
-			itemDict = parsingSaleItemToDict(tmpHtmlTree)
-			if itemDict != None:
-				tCardSaleDict = itemDict
-
-		voteSaleDict = {}
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.vote_previouswinner a'):
-			#print all html for debug
-			#print(lxml.html.tostring(tmpHtmlTree))
-			itemDict = parsingSaleItemToDict(tmpHtmlTree)
-			if itemDict != None:
-				voteSaleDict = itemDict
-
 		dailySaleList = []
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.summersale_dailydeals a'):
+		for tmpHtmlTree in recvParsedHtml.cssselect('div.insert_season_here_sale_dailydeals a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
@@ -180,18 +164,6 @@ def checkAndPostSaleStatus():
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
 			if itemDict != None:
 				flashSaleList.append(itemDict)
-
-		print('check&posting vote sale...')
-		if voteSaleDict == {}:
-			print('skipping... (maybe region lock)')
-		else:
-			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s)')
-
-		print('check&posting card spotlight sale...')
-		if tCardSaleDict == {}:
-			print('skipping... (trading card region lock)')
-		else:
-			realCheckAndPostSaleStatus(CARD_SALE_TXT_PATH, [tCardSaleDict], '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
 
 		print('check&posting daily sale...')
 		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
