@@ -18,6 +18,7 @@ STEAM_API_KEY = ''
 TWT_CONSUMER_APP_NAME = "SSSNotifier"
 TWT_CONSUMER_KEY = ''
 TWT_CONSUMER_SECRET = ''
+TWT_MAXIMUM_CHAR = 140
 STEAM_APP_UNKNOWN_NAME = '???'
 
 MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
@@ -47,6 +48,10 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 
 		for saleItem in targetList:
 			tmpStr = format % (saleItem['url'], saleItem['name'], saleItem['originalPrice'],
+			 saleItem['discountedPrice'], saleItem['salePercentage'])
+
+			if len(tmpStr) > TWT_MAXIMUM_CHAR:
+				tmpStr = format % (saleItem['url'], saleItem['name'][:20] + '...', saleItem['originalPrice'],
 			 saleItem['discountedPrice'], saleItem['salePercentage'])
 
 			try:
