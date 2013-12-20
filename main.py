@@ -1,6 +1,6 @@
 #######################################################
-#	Steam Summer Sale Notifier
-#	Ver 0.2
+#	Steam Summer Sale Notifier (For 2013 Winter Version)
+#	Ver 0.4
 #	Author : Yi Yeon Jae (pusungwi@gmail.com)
 #######################################################
 
@@ -19,13 +19,13 @@ TWT_CONSUMER_APP_NAME = "SSSNotifier"
 TWT_CONSUMER_KEY = ''
 TWT_CONSUMER_SECRET = ''
 STEAM_APP_UNKNOWN_NAME = '???'
+TWT_MAXIMUM_CHAR = 140
 
 MY_TWITTER_CREDS = os.path.expanduser('~/.sss_creds')
 STEAM_APP_LIST_PATH = os.path.expanduser('steamAppList')
 DAILY_SALE_TXT_PATH = os.path.expanduser('dSaleList')
 FLASH_SALE_TXT_PATH = os.path.expanduser('fSaleList')
 VOTE_SALE_TXT_PATH = os.path.expanduser('vSaleList')
-CARD_SALE_TXT_PATH = os.path.expanduser('cSaleList')
 
 def realCheckAndPostSaleStatus(filePath, targetList, format):
 	isAlreadyPosted = False
@@ -43,13 +43,17 @@ def realCheckAndPostSaleStatus(filePath, targetList, format):
 		if os.path.exists(filePath):
 			os.remove(filePath)
 
-		saleDict = {'data':targetList, 'version':0.2}
+		saleDict = {'data':targetList, 'version':0.4}
 		with open(filePath, 'w') as f:
 			json.dump(saleDict, f)
 
 		for saleItem in targetList:
 			tmpStr = format % (saleItem['url'], saleItem['name'], saleItem['originalPrice'],
 			 saleItem['discountedPrice'], saleItem['salePercentage'])
+
+			if len(tmpStr) > TWT_MAXIMUM_CHAR:
+				tmpStr = format % (saleItem['url'], saleItem['name'][:20] + '...', saleItem['originalPrice'],
+				saleItem['discountedPrice'], saleItem['salePercentage'])
 
 			try:
 				dSearchDict = twt.search.tweets(q=tmpStr)
@@ -151,12 +155,6 @@ def checkAndPostSaleStatus():
 		#result = etree.tostring(recvParsedHtml.getroot(), pretty_print=True, method="html")
 		#print(recvParsedHtml)
 
-		tCardSaleDict = {}
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.tradingcard_spotlight a'):
-			itemDict = parsingSaleItemToDict(tmpHtmlTree)
-			if itemDict != None:
-				tCardSaleDict = itemDict
-
 		voteSaleDict = {}
 		for tmpHtmlTree in recvParsedHtml.cssselect('div.vote_previouswinner a'):
 			#print all html for debug
@@ -166,7 +164,7 @@ def checkAndPostSaleStatus():
 				voteSaleDict = itemDict
 
 		dailySaleList = []
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.summersale_dailydeals a'):
+		for tmpHtmlTree in recvParsedHtml.cssselect('div.wintersale_dailydeals a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
@@ -185,19 +183,13 @@ def checkAndPostSaleStatus():
 		if voteSaleDict == {}:
 			print('skipping... (maybe region lock)')
 		else:
-			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s)')
-
-		print('check&posting card spotlight sale...')
-		if tCardSaleDict == {}:
-			print('skipping... (trading card region lock)')
-		else:
-			realCheckAndPostSaleStatus(CARD_SALE_TXT_PATH, [tCardSaleDict], '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
+			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s) #스팀겨울세일')
 
 		print('check&posting daily sale...')
-		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s)')
+		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s) #스팀겨울세일')
 		
 		print('check&posting flash sale...')
-		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s)')
+		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s) #스팀겨울세일')
 
 if __name__ == "__main__":
 	while True:
