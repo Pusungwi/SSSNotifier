@@ -146,7 +146,7 @@ def checkAndPostSaleStatus():
 		requestFullUrl = SEARCH_URL
 		recvSearchHtml = urllib.request.urlopen(requestFullUrl)
 	except IOError:
-		print("URL address Error")
+		print("URL address Error. try another URL Address")
 	else:
 		recvRawHtml = recvSearchHtml.read()
 		recvRawDecodedHtml = recvRawHtml.decode('utf-8')
@@ -164,7 +164,7 @@ def checkAndPostSaleStatus():
 				voteSaleDict = itemDict
 
 		dailySaleList = []
-		for tmpHtmlTree in recvParsedHtml.cssselect('div.wintersale_dailydeals a'):
+		for tmpHtmlTree in recvParsedHtml.cssselect('div.summersale_dailydeals a'):
 			#print all html for debug
 			#print(lxml.html.tostring(tmpHtmlTree))
 			itemDict = parsingSaleItemToDict(tmpHtmlTree)
@@ -183,15 +183,15 @@ def checkAndPostSaleStatus():
 		if voteSaleDict == {}:
 			print('skipping... (maybe region lock)')
 		else:
-			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s) #스팀겨울세일')
+			realCheckAndPostSaleStatus(VOTE_SALE_TXT_PATH, [voteSaleDict], '%s [NEW] 스팀 커뮤니티의 선택 : %s (%s->%s, %s) #스팀여름세일')
 
 		print('check&posting daily sale...')
-		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s) #스팀겨울세일')
+		realCheckAndPostSaleStatus(DAILY_SALE_TXT_PATH, dailySaleList, '%s [NEW] 스팀 일일 세일 : %s (%s->%s, %s) #스팀여름세일')
 		
 		print('check&posting flash sale...')
-		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s) #스팀겨울세일')
+		realCheckAndPostSaleStatus(FLASH_SALE_TXT_PATH, flashSaleList, '%s [NEW] 스팀 반짝 세일 : %s (%s->%s, %s) #스팀여름세일')
 
 if __name__ == "__main__":
 	while True:
 		checkAndPostSaleStatus()
-		time.sleep(60*5)
+		time.sleep(60*3)
